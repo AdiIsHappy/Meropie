@@ -19,7 +19,8 @@ def calculate(case : int):
     StrippedData.reset_index(level=0, inplace=True) 
 
     # this array will store all expected  time period values
-    timePriods = np.array([0]*len(StrippedData["diff"]))
+    timePriodsMin = np.array([0]*len(StrippedData["diff"]))
+    timePriodsMax = np.array([0]*len(StrippedData["diff"]))
 
     for i in range(2,len(StrippedData["diff"])):
         PreviousM = sgn(StrippedData["diff"][i-1])
@@ -27,27 +28,32 @@ def calculate(case : int):
 
         #stores data to timePriods array is current point is min and privous one was max.
         if (PreviousM != currentM) and currentM < 0:
-            timePriods[i] = StrippedData["JD"][i] - StrippedData["JD"][i-1]
+            timePriodsMin[i] = StrippedData["JD"][i] - StrippedData["JD"][i-1]
+        if (PreviousM != currentM) and currentM > 0:
+            timePriodsMax[i] = StrippedData["JD"][i] - StrippedData["JD"][i-1]
 
     #find final time period by taking avregae of non zero values
-    Period =sum(timePriods[timePriods!= 0])/len(timePriods[timePriods!=0])
+    PeriodMin =sum(timePriodsMax[timePriodsMax!= 0])/len(timePriodsMax[timePriodsMax!=0])
+    PeriodMax =sum(timePriodsMin[timePriodsMin!= 0])/len(timePriodsMin[timePriodsMin!=0])
 
     #apperent Magnitude is just average of all magnitudes given
     apperentMagnitude = sum(csvReadData["Magnitude"])/len(csvReadData["Magnitude"])
 
     #absolute Magnitude. this calculation is done on the basis of info available in wikipidea
     # https://en.wikipedia.org/wiki/Period-luminosity_relation#:~:text=In%20astronomy%2C%20a%20period%2Dluminosity,sometimes%20called%20the%20Leavitt%20law
-    absoluteMagnitude = (-2.43)*(log10(Period) - 1) - 4.05
+    absoluteMagnitudeMax = (-2.43)*(log10(PeriodMax) - 1) - 4.05
+    absoluteMagnitudeMin = (-2.43)*(log10(PeriodMin) - 1) - 4.05
 
     #distance of star is calulated based following fomula 
     #distnace =  10^((m-M+5)/5) parsecs 
     # it is taken from https://www.atnf.csiro.au/outreach/education/senior/astrophysics/variable_cepheids.html
-    distance = pow(10, (apperentMagnitude-absoluteMagnitude+5)/5) * 3.26156
+    distanceMax = pow(10, (apperentMagnitude-absoluteMagnitudeMax +5)/5) * 3.26156
+    distanceMin = pow(10, (apperentMagnitude-absoluteMagnitudeMin+5)/5) * 3.26156
 
     #all prinint work
     print(f"Case {case + 1} :")
     print("\tEta Aquilae") if case == 0 else print("\tDelta Cephei")
-    print(f"\tcalculated period for this case is {Period : .2f} days and calculated distance is {Period:.2f} light yeras")
+    print(f"\tcalculated period for this case is {(PeriodMax+PeriodMin)/2 : .2f}days and calculated distance is {(distanceMax+ distanceMin)/2:.2f} light yeras")
 
 if __name__ == "__main__":
     sgn = lambda x : x/abs(x) if x!= 0 else 0
